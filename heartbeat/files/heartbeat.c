@@ -14,7 +14,7 @@
 
 typedef float real;
 typedef struct{real Re; real Im;} complex;
-typedef struct{complex v[N]; complex scratch[N];int fd;}parameters;
+typedef struct{complex v[N]; complex scratch[N];int fd; complex buffer[N];}parameters;
 #ifndef PI
 # define PI	3.14159265358979323846264338327950288
 #endif
@@ -47,7 +47,7 @@ void fft( complex *v, int n, complex *tmp )
 void* compute( void *arg )
 {
 	parameters * p=(parameters*)arg;
-	complex *v=p->v;
+	complex *v=p->buffer;
 	complex *tmp=p->scratch;
     float abs[N];
     int minIdx, maxIdx;
@@ -95,6 +95,7 @@ int main(void)
   parameters argument;
   argument.fd=-1;
   int ret;
+  int i;
   char *dev_name = "/dev/mydriver_dev";
   pthread_t readthread,calcthread;
   if ((argument.fd = open(dev_name, O_RDWR)) < 0)
@@ -111,6 +112,8 @@ int main(void)
 	   }
 	  //}quando si arriva a 2048 valori si va avanti
 	  pthread_join(readthread,NULL);//aspetta che il primo thread abbia finito
+	  for(i=0;i<N;i++)
+		argument.buffer[i]=argument.v[i];
 	  ret= pthread_create(&calcthread,NULL,compute,&argument);
 	  if(ret!=0){
 		   	printf("Can't create the thread (%s)\n",strerror(errno));
